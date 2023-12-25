@@ -7,9 +7,9 @@ lambdas: [1, 20, 3]
 policy_model: task-specific
 
 paths:
-  log_dir: experiments\logs
-  result_dir: experiments\results
-  checkpoint_dir: experiments\checkpoints
+  log_dir: experiments/logs
+  result_dir: /content/AdaShare/experiments/results
+  checkpoint_dir: /content/AdaShare/experiments/checkpoints
 
 dataload:
   dataset: NYU_v2
