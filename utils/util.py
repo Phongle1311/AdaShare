@@ -16,7 +16,9 @@ def show_batch(batch):
     is_video_batch = len(normed.size()) > 4
 
     if is_video_batch:
-        rows = [vu.make_grid(b.permute(1, 0, 2, 3), nrow=b.size(1)).numpy() for b in normed]
+        rows = [
+            vu.make_grid(b.permute(1, 0, 2, 3), nrow=b.size(1)).numpy() for b in normed
+        ]
         im = np.concatenate(rows, axis=1)
     else:
         im = vu.make_grid(normed).numpy()
@@ -41,33 +43,33 @@ def listopt(opt, f=None):
     args = vars(opt)
 
     if f is not None:
-        f.write('------------ Options -------------\n')
+        f.write("------------ Options -------------\n")
     else:
-        print('------------ Options -------------')
+        print("------------ Options -------------")
 
     for k, v in sorted(args.items()):
         if f is not None:
-            f.write('%s: %s\n' % (str(k), str(v)))
+            f.write("%s: %s\n" % (str(k), str(v)))
         else:
-            print('%s: %s' % (str(k), str(v)))
+            print("%s: %s" % (str(k), str(v)))
 
     if f is not None:
-        f.write('-------------- End ----------------\n')
+        f.write("-------------- End ----------------\n")
     else:
-        print('-------------- End ----------------')
+        print("-------------- End ----------------")
 
 
 def print_current_errors(log_name, update, errors, t):
-    message = 'update: %d, time: %.3f ' % (update, t)
+    message = "update: %d, time: %.3f " % (update, t)
     for k, v in errors.items():
-        if k.startswith('Update'):
-            message += '%s: %s ' % (k, str(v))
+        if k.startswith("Update"):
+            message += "%s: %s " % (k, str(v))
         else:
-            message += '%s: %.3f ' % (k, v)
+            message += "%s: %.3f " % (k, v)
 
     print(message)
-    with open(log_name, 'a') as log_file:
-        log_file.write('%s \n' % message)
+    with open(log_name, "a") as log_file:
+        log_file.write("%s \n" % message)
 
 
 def images_to_visual(tensor):
@@ -88,7 +90,7 @@ def videos_to_numpy(tensor):
     # [batch, c, t, h, w] -> [batch, t, h, w, c]
     generated = tensor.data.cpu().numpy().transpose(0, 2, 3, 4, 1).clip(-1, 1)
     generated = (generated + 1) / 2 * 255
-    return generated.astype('uint8')
+    return generated.astype("uint8")
 
 
 def rgb2gray(image):
@@ -102,35 +104,46 @@ def rgb2gray(image):
             gray_ = 0.2989 * image[:, 0] + 0.5870 * image[:, 1] + 0.1140 * image[:, 2]
             gray = torch.unsqueeze(gray_, 1)
         else:
-            raise ValueError('The dimension of tensor is %d not supported in rgb2gray' % image.dim())
+            raise ValueError(
+                "The dimension of tensor is %d not supported in rgb2gray" % image.dim()
+            )
     elif isinstance(image, np.ndarray):
         if image.ndim == 3:
             if image.shape[0] == 3:
                 gray_ = 0.2989 * image[0] + 0.5870 * image[1] + 0.1140 * image[2]
                 gray = np.expand_dims(gray_, 0)
             else:
-                gray_ = 0.2989 * image[:, :, 0] + 0.5870 * image[:, :, 1] + 0.1140 * image[:, :, 2]
+                gray_ = (
+                    0.2989 * image[:, :, 0]
+                    + 0.5870 * image[:, :, 1]
+                    + 0.1140 * image[:, :, 2]
+                )
                 gray = np.expand_dims(gray_, -1)
         elif image.ndim == 4:
             gray_ = 0.2989 * image[:, 0] + 0.5870 * image[:, 1] + 0.1140 * image[:, 2]
             gray = np.expand_dims(gray_, 1)
         else:
-            raise ValueError('The dimension of np.ndarray is %d not supported in rgb2gray' % image.ndim)
+            raise ValueError(
+                "The dimension of np.ndarray is %d not supported in rgb2gray"
+                % image.ndim
+            )
     return gray
 
 
 def one_hot(category_labels, num_categories):
-    '''
+    """
 
     :param category_labels: a np.ndarray or a tensor with size [batch_size, ]
     :return: a tensor with size [batch_size, num_categories]
-    '''
+    """
     if isinstance(category_labels, torch.Tensor):
         labels = category_labels.cpu().numpy()
     else:
         labels = category_labels
     num_samples = labels.shape[0]
-    one_hot_labels = np.zeros((num_samples, num_categories), dtype=np.float32)  # [num_samples. dim_z_category]
+    one_hot_labels = np.zeros(
+        (num_samples, num_categories), dtype=np.float32
+    )  # [num_samples. dim_z_category]
     one_hot_labels[np.arange(num_samples), labels] = 1
     one_hot_labels = torch.from_numpy(one_hot_labels)
 
@@ -144,10 +157,15 @@ def compute_grad(inputs):
     :param inputs: a tensor with size [batch_size, c, h, w]
     :return: a tensor with size [batch_size, 2c, h, w]
     """
-    batch_size, n_channels, h, w = int(inputs.size()[0]), int(inputs.size()[1]), int(inputs.size()[2]), int(inputs.size()[3])
+    batch_size, n_channels, h, w = (
+        int(inputs.size()[0]),
+        int(inputs.size()[1]),
+        int(inputs.size()[2]),
+        int(inputs.size()[3]),
+    )
     grad = torch.zeros((batch_size, 2 * n_channels, h, w))
-    grad[:, : n_channels, :-1] = (inputs[:, :, :-1] - inputs[:, :, 1:])/2
-    grad[:, n_channels:, :, :-1] = (inputs[:, :, :, :-1] - inputs[:, :, :, 1:])/2
+    grad[:, :n_channels, :-1] = (inputs[:, :, :-1] - inputs[:, :, 1:]) / 2
+    grad[:, n_channels:, :, :-1] = (inputs[:, :, :, :-1] - inputs[:, :, :, 1:]) / 2
     if torch.cuda.is_available():
         grad = grad.cuda()
     return grad
@@ -159,7 +177,6 @@ class Initializer:
 
     @staticmethod
     def initialize(model, initialization, **kwargs):
-
         def weights_init(m):
             if isinstance(m, nn.Conv2d):
                 initialization(m.weight.data, **kwargs)
@@ -192,15 +209,16 @@ class Initializer:
 
         model.apply(weights_init)
 
+
 # ********************************************************************************
 
 
 def print_separator(text, total_len=50):
-    print('#' * total_len)
-    left_width = (total_len - len(text))//2
+    print("#" * total_len)
+    left_width = (total_len - len(text)) // 2
     right_width = total_len - len(text) - left_width
     print("#" * left_width + text + "#" * right_width)
-    print('#' * total_len)
+    print("#" * total_len)
 
 
 def print_yaml(opt):
@@ -216,21 +234,25 @@ def print_yaml(opt):
 
 
 def create_path(opt):
-    for k, v in opt['paths'].items():
-        makedir(os.path.join(v, opt['exp_name']))
+    for k, v in opt["paths"].items():
+        makedir(os.path.join(v, opt["exp_name"]))
 
 
 def read_yaml():
     # read in yaml
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Path for the config file")
-    parser.add_argument("--exp_ids", type=int, nargs='+', default=[0], help="Path for the config file")
-    parser.add_argument("--gpus", type=int, nargs='+', default=[0], help="Path for the config file")
+    parser.add_argument(
+        "--exp_ids", type=int, nargs="+", default=[0], help="Path for the config file"
+    )
+    parser.add_argument(
+        "--gpus", type=int, nargs="+", default=[0], help="Path for the config file"
+    )
     args = parser.parse_args()
 
     # torch.cuda.set_device(args.gpu)
     with open(args.config) as f:
-        opt = yaml.load(f)
+        opt = yaml.load(f, Loader=yaml.FullLoader)
     return opt, args.gpus, args.exp_ids
 
 
@@ -248,25 +270,42 @@ def fix_random_seed(seed):
 
 
 def create_meta_labels(n_way, n_support, n_query):
-    train_labels = torch.from_numpy(np.repeat(np.arange(n_way), n_support).astype('int'))
-    test_labels = torch.from_numpy(np.repeat(np.arange(n_way), n_query).astype('int'))
+    train_labels = torch.from_numpy(
+        np.repeat(np.arange(n_way), n_support).astype("int")
+    )
+    test_labels = torch.from_numpy(np.repeat(np.arange(n_way), n_query).astype("int"))
     return train_labels, test_labels
 
 
 def create_meta_batch(batch, n_way, n_support, n_query):
     train_labels, test_labels = create_meta_labels(n_way, n_support, n_query)
-    whole_batch = {'videos': batch['videos'], 'labels': torch.cat((train_labels, test_labels), dim=0), 'names': batch['names']}
-    train_batch = {'videos': batch['videos'][: n_way * n_support], 'labels': train_labels, 'names': batch['names'][: n_way * n_support]}
-    test_batch = {'videos': batch['videos'][n_way * n_support:], 'labels': test_labels, 'names': batch['names'][n_way * n_support:]}
+    whole_batch = {
+        "videos": batch["videos"],
+        "labels": torch.cat((train_labels, test_labels), dim=0),
+        "names": batch["names"],
+    }
+    train_batch = {
+        "videos": batch["videos"][: n_way * n_support],
+        "labels": train_labels,
+        "names": batch["names"][: n_way * n_support],
+    }
+    test_batch = {
+        "videos": batch["videos"][n_way * n_support :],
+        "labels": test_labels,
+        "names": batch["names"][n_way * n_support :],
+    }
 
     return whole_batch, train_batch, test_batch
 
 
 def shuffle_batch(batch):
-    batch_size = len(batch['videos'])
+    batch_size = len(batch["videos"])
     shuffled_inds = np.random.permutation(batch_size).tolist()
-    batch = {'videos': batch['videos'][shuffled_inds], 'labels': batch['labels'][shuffled_inds],
-             'names': [batch['names'][idx] for idx in shuffled_inds]}
+    batch = {
+        "videos": batch["videos"][shuffled_inds],
+        "labels": batch["labels"][shuffled_inds],
+        "names": [batch["names"][idx] for idx in shuffled_inds],
+    }
     return batch
 
 
@@ -280,16 +319,19 @@ def random_color():
 
 
 def parse_config():
-    print_separator('READ YAML')
+    print_separator("READ YAML")
     opt, gpu_ids = read_yaml()
     fix_random_seed(opt["seed"])
     create_path(opt)
     # print yaml on the screen
     lines = print_yaml(opt)
-    for line in lines: print(line)
-    print('-----------------------------------------------------')
+    for line in lines:
+        print(line)
+    print("-----------------------------------------------------")
     # print to file
-    with open(os.path.join(opt['paths']['log_dir'], opt['exp_name'], 'opt.txt'), 'w+') as f:
+    with open(
+        os.path.join(opt["paths"]["log_dir"], opt["exp_name"], "opt.txt"), "w+"
+    ) as f:
         f.writelines(lines)
     return opt, gpu_ids
 
@@ -331,7 +373,7 @@ def get_iou(pred, gt, n_classes=21):
                 continue
             iou.append(intersect[k] / union[k])
 
-        miou = (sum(iou) / len(iou))
+        miou = sum(iou) / len(iou)
         total_miou += miou
 
     total_miou = total_miou // len(pred)

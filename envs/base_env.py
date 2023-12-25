@@ -493,7 +493,8 @@ class BaseEnv():
             save_path = path
         if os.path.isfile(save_path):
             print('=> loading snapshot from {}'.format(save_path))
-            snapshot = torch.load(save_path, map_location='cuda:%d' % self.device_id)
+            # snapshot = torch.load(save_path, map_location='cuda:%d' % self.device_id)
+            snapshot = torch.load(save_path, map_location='cpu')
             return self.load_snapshot(snapshot)
         else:
             raise ValueError('snapshot %s does not exist' % save_path)
