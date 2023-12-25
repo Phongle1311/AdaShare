@@ -43,7 +43,7 @@ def eval_fix_policy(environ, dataloader, tasks, num_seg_cls=-1, eval_iter=10):
             if 'seg' in tasks:
                 records['seg']['gts'].append(metrics['seg']['gt'])
                 records['seg']['preds'].append(metrics['seg']['pred'])
-                new_mat = confusion_matrix(metrics['seg']['gt'], metrics['seg']['pred'], records['seg']['labels'])
+                new_mat = confusion_matrix(metrics['seg']['gt'], metrics['seg']['pred'], labels = records['seg']['labels'])
                 assert (records['seg']['conf_mat'].shape == new_mat.shape)
                 records['seg']['conf_mat'] += new_mat
                 records['seg']['pixelAccs'].append(metrics['seg']['pixelAcc'])
